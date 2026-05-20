@@ -19,4 +19,6 @@ if ($conn->connect_error) {
     die($appDebug ? ("Database connection failed: " . $conn->connect_error) : "Database connection failed.");
 }
 
+$conn->close();
+
 ?>

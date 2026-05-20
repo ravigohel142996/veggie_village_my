@@ -19,7 +19,7 @@ Configure these in Render service settings (or use Blueprint sync):
 - `DB_USER`
 - `DB_PASS`
 - `DB_NAME`
-- `DB_PORT` (Railway MySQL is typically `3306`)
+- `DB_PORT` (defaults to `3306`)
 - `APP_URL` (example: `https://your-service-name.onrender.com`)
 - `SMTP_USER`
 - `SMTP_PASS`
