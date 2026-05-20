@@ -52,7 +52,13 @@ Open: `http://localhost:10000`
 
 ## Database setup
 
-Import `veggei_village_db.sql` into your MySQL server, then point env vars to that database.
+On first deployment, the app now bootstraps the database automatically:
+
+- creates the database (from `DB_NAME`) if it does not exist
+- checks whether tables exist
+- imports `veggei_village_db.sql` automatically when no tables are present
+
+This works for Render and Railway deployments without manual SQL import.
 
 ## Notes
 
