@@ -49,7 +49,10 @@ function sendMail($email,$v_code){
 		$mail->isHTML(true);
 		$mail->Subject = 'Email Verification from Veggie Village';
 		$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-		$hostName = $_SERVER['HTTP_HOST'] ?? 'localhost:10000';
+		$appUrlHost = parse_url(getenv('APP_URL') ?: '', PHP_URL_HOST);
+		$appUrlPort = parse_url(getenv('APP_URL') ?: '', PHP_URL_PORT);
+		$defaultHost = $appUrlHost ? ($appUrlHost . ($appUrlPort ? ':' . $appUrlPort : '')) : 'veggievillage.invalid';
+		$hostName = $_SERVER['HTTP_HOST'] ?? $defaultHost;
 		$appUrl = rtrim(getenv('APP_URL') ?: ($scheme . '://' . $hostName), '/');
 		$verifyUrl = $appUrl . '/backends/verify.php?email=' . urlencode($email) . '&v_code=' . urlencode($v_code);
 

@@ -1,6 +1,6 @@
 <?php
 
-function veggieVillageEnsureDatabaseInitialized(string $host, string $user, string $password, string $database): void
+function veggieVillageEnsureDatabaseInitialized(string $host, string $user, string $password, string $database, int $port = 3306): void
 {
     static $isChecked = false;
 
@@ -9,8 +9,12 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
     }
     $isChecked = true;
 
-    mysqli_report(MYSQLI_REPORT_OFF);
-    $mysqli = new mysqli($host, $user, $password);
+    if ($host === '' || strtolower($host) === 'localhost' || str_starts_with($host, '/')) {
+        throw new Exception('Database connection failed: DB_HOST must be a TCP host and cannot use localhost or a unix socket path.');
+    }
+
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+    $mysqli = new mysqli($host, $user, $password, '', $port);
 
     if ($mysqli->connect_errno) {
         throw new Exception('Database connection failed: ' . $mysqli->connect_error);

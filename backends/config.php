@@ -1,22 +1,28 @@
 <?php
 
-$host = getenv("DB_HOST");
-$user = getenv("DB_USER");
-$pass = getenv("DB_PASS");
-$db   = getenv("DB_NAME");
-$port = getenv("DB_PORT") ?: 3306;
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-if (empty($host) || empty($user) || empty($db)) {
-    error_log('Database connection failed: missing DB_HOST, DB_USER, or DB_NAME environment variable.');
-    die('Database connection failed.');
+$host = trim(getenv('DB_HOST'));
+$user = trim(getenv('DB_USER'));
+$pass = trim(getenv('DB_PASS'));
+$db   = trim(getenv('DB_NAME'));
+$port = intval(getenv('DB_PORT') ?: 3306);
+
+if ($host === '' || strtolower($host) === 'localhost' || str_starts_with($host, '/')) {
+    error_log('Database connection failed: DB_HOST must be a TCP host and cannot use localhost or a unix socket path.');
+    die('Database connection failed: invalid DB_HOST.');
 }
+
+error_log('DB_HOST=' . $host);
+error_log('DB_PORT=' . $port);
 
 $conn = new mysqli($host, $user, $pass, $db, $port);
 
+$conn->set_charset('utf8mb4');
+
 if ($conn->connect_error) {
-    error_log("Database connection failed: " . $conn->connect_error);
-    $appDebug = filter_var(getenv('APP_DEBUG') ?: 'false', FILTER_VALIDATE_BOOLEAN);
-    die($appDebug ? ("Database connection failed: " . $conn->connect_error) : "Database connection failed.");
+    error_log('MySQLi connection error: ' . $conn->connect_error);
+    die('Database connection failed: ' . $conn->connect_error);
 }
 
 $conn->close();

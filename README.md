@@ -50,7 +50,7 @@ docker run --rm -p 10000:10000 \
   veggie-village
 ```
 
-Open: `http://localhost:10000`
+Open: `http://127.0.0.1:10000`
 
 ## Database setup
 
