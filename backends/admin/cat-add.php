@@ -3,10 +3,11 @@
 session_start();
 try {
 
-    if (!file_exists('../connection-pdo.php' ))
+    $connectionFile = __DIR__ . '/../connection-pdo.php';
+    if (!file_exists($connectionFile))
         throw new Exception();
     else
-        require_once('../connection-pdo.php' ); 
+        require_once($connectionFile); 
 		
 } catch (Exception $e) {
 
@@ -56,7 +57,7 @@ if (!preg_match($regex, $_POST['name']) || !preg_match($regex, $_POST['short_des
 	$long_desc = $_POST['long_desc'];
 	$img = $_FILES['img']['name'];
 	$temp = $_FILES['img']['tmp_name'];
-	$folder = "../../images/" . $img;
+	$folder = __DIR__ . "/../../images/" . $img;
 	move_uploaded_file($temp,$folder);
 
 

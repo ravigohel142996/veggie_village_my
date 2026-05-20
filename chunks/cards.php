@@ -2,7 +2,7 @@
 		
 <?php
 
-require('backends/connection-pdo.php');
+require __DIR__ . '/../backends/connection-pdo.php';
 
 $sql = 'SELECT * FROM categories WHERE data_status = "Active" LIMIT 3';
 

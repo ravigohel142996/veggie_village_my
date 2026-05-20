@@ -1,8 +1,8 @@
 <?php
 
-$host = "localhost";
-$user= "root";
-$pwd = "";
-$database = "vaggie_village";
+$host = getenv("DB_HOST") ?: "localhost";
+$user = getenv("DB_USER") ?: "root";
+$pwd = getenv("DB_PASS") ?: "";
+$database = getenv("DB_NAME") ?: "vaggie_village";
 
 ?>

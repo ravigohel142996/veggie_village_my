@@ -1,5 +1,5 @@
 <?php
-require('backends/connection-pdo.php');
+require __DIR__ . '/../backends/connection-pdo.php';
 
 	if (!isset($_SESSION['visited'])) {
         $_SESSION['visited'] = true;

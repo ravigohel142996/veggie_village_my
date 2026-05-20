@@ -1,10 +1,11 @@
 <?php 
 try {
 
-    if (!file_exists('connection-pdo.php' ))
+    $connectionFile = __DIR__ . '/connection-pdo.php';
+    if (!file_exists($connectionFile))
         throw new Exception();
     else
-        require_once('connection-pdo.php' ); 
+        require_once($connectionFile); 
 		
 } catch (Exception $e) {
 
@@ -24,7 +25,7 @@ if(isset($_GET['email']) && isset($_GET['v_code'])){
             if($result_fetch['is_verified'] == 0){
                 $update  = $pdoconn->prepare("UPDATE users SET is_verified = '1' WHERE email = '$result_fetch[email]'");
                 if($update->execute()){
-                    echo "<script>alert('Email Verification Successful');window.location.href='../../veggie_village';</script>";
+                    echo "<script>alert('Email Verification Successful');window.location.href='/';</script>";
 
                 }
             }else{

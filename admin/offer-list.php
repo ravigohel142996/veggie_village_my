@@ -1,6 +1,6 @@
 <?php
 
-require('../backends/connection-pdo.php');
+require __DIR__ . '/../backends/connection-pdo.php';
 
 $sql = 'SELECT * FROM offers ORDER BY id DESC';
 

@@ -6,7 +6,7 @@
 
 <?php
 
-require('../backends/connection-pdo.php');
+require __DIR__ . '/../backends/connection-pdo.php';
 
 $sql = 'SELECT orders.offer,orders.quantity, orders.price, orders.order_id, orders.user_name, orders.timestamp, food.fname FROM orders LEFT JOIN food ON orders.food_id = food.id';
 

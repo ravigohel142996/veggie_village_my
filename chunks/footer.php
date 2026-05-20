@@ -1,5 +1,5 @@
 <?php 
-require('backends/connection-pdo.php');
+require __DIR__ . '/../backends/connection-pdo.php';
 $q = "SELECT * FROM page_views WHERE id = '1'";
 $que = $pdoconn->prepare($q);
 $que->execute();

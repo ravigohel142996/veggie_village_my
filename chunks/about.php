@@ -9,6 +9,6 @@
 Our commitment goes beyond taste. We focus on using fresh, locally sourced ingredients, creating a menu that is not only delicious but also wholesome. With a warm, welcoming ambiance and impeccable service, <br><BR>Veggie Village is the perfect destination for family gatherings, casual dining, and special celebrations.
 
 Join us at Veggie Village, where every bite is a journey through the heart of India’s culinary excellence. 🍛✨</p>
-				<a href="/veggie_village/about-veggie-village.php" class="waves-effect waves-light btn about-btn" style="background: #3E7B27 !important; border-radius:20px; color:#E6DD3B; font-weight: bold;">Read More &raquo;</a>
+				<a href="about-veggie-village.php" class="waves-effect waves-light btn about-btn" style="background: #3E7B27 !important; border-radius:20px; color:#E6DD3B; font-weight: bold;">Read More &raquo;</a>
 		      </div>
 	</section>

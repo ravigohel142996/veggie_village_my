@@ -1,5 +1,5 @@
 <?php 
-require('backends/connection-pdo.php');
+require __DIR__ . '/../backends/connection-pdo.php';
 $q = 'SELECT * FROM offers WHERE end_date < CURDATE() AND status != "expired"';
 $q2 = 'SELECT * FROM offers WHERE start_date = CURDATE() AND status = "Upcoming"';
 $u_query = 'UPDATE offers SET status = "expired" where end_date < CURDATE() AND status != "expired"';

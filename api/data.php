@@ -2,10 +2,11 @@
 
 try {
 
-    if (!file_exists('../backends/connection-pdo.php' ))
+    $connectionFile = __DIR__ . '/../backends/connection-pdo.php';
+    if (!file_exists($connectionFile))
         throw new Exception();
     else
-        require_once('../backends/connection-pdo.php' ); 
+        require_once($connectionFile); 
 		
 } catch (Exception $e) {
 

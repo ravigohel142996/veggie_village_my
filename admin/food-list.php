@@ -6,7 +6,7 @@
 
 <?php
 
-require('../backends/connection-pdo.php');
+require __DIR__ . '/../backends/connection-pdo.php';
 
 // $sql = 'SELECT food.id, food.fname, food.description, categories.name, food.image
 //         FROM food

@@ -1,5 +1,5 @@
 <?php
-include_once("../backends/connection-pdo.php");
+include_once __DIR__ . '/../backends/connection-pdo.php';
 
 if (!isset($_POST['email']) || !isset($_POST['password'])) {
 

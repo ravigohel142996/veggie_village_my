@@ -3,10 +3,11 @@
 session_start();
 try {
 
-    if (!file_exists('../connection-pdo.php' ))
+    $connectionFile = __DIR__ . '/../connection-pdo.php';
+    if (!file_exists($connectionFile))
         throw new Exception();
     else
-        require_once('../connection-pdo.php' ); 
+        require_once($connectionFile); 
 		
 } catch (Exception $e) {
 
@@ -43,7 +44,7 @@ if (!isset($_REQUEST['id'])) {
 	$price = $_POST['price'];
     $img = $_FILES['fimg']['name'];
 	$temp = $_FILES['fimg']['tmp_name'];
-	$folder = "../../images/" . $img;
+	$folder = __DIR__ . "/../../images/" . $img;
 
     if($img == ""){
         $sql = "UPDATE food SET fname='$name', description='$short_desc', price='$price', data_status='$d_status' WHERE id='$id'";

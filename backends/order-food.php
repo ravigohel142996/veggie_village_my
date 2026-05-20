@@ -2,8 +2,9 @@
 session_start();
 
 try {
-    if (!file_exists('connection-pdo.php')) throw new Exception();
-    else require_once('connection-pdo.php');
+    $connectionFile = __DIR__ . '/connection-pdo.php';
+    if (!file_exists($connectionFile)) throw new Exception();
+    else require_once($connectionFile);
 } catch (Exception $e) {
     echo json_encode(['code'=>"0", 'msg'=>"There were some problem in the Server! Try after some time!"]);
     exit();

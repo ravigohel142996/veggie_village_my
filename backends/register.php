@@ -1,10 +1,11 @@
 <?php
 try {
 
-    if (!file_exists('connection-pdo.php' ))
+    $connectionFile = __DIR__ . '/connection-pdo.php';
+    if (!file_exists($connectionFile))
         throw new Exception();
     else
-        require_once('connection-pdo.php' ); 
+        require_once($connectionFile); 
 		
 } catch (Exception $e) {
 
@@ -20,9 +21,9 @@ use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
 function sendMail($email,$v_code){
-	require('PHPMailer/PHPMailer.php');
-	require('PHPMailer/SMTP.php');
-	require('PHPMailer/Exception.php');
+	require __DIR__ . '/PHPMailer/PHPMailer.php';
+	require __DIR__ . '/PHPMailer/SMTP.php';
+	require __DIR__ . '/PHPMailer/Exception.php';
 
 	$mail = new PHPMailer(true);
 
@@ -30,20 +31,31 @@ function sendMail($email,$v_code){
 		$mail->isSMTP();
 		$mail->Host       = 'smtp.gmail.com';
 		$mail->SMTPAuth   = true;
-		$mail->Username   = 'agravatprem00@gmail.com';
-		$mail->Password   = 'kaly hfax tmmb viqs';
+		$smtpUser = getenv('SMTP_USER');
+		$smtpPass = getenv('SMTP_PASS');
+		if (!$smtpUser || !$smtpPass) {
+			error_log('SMTP credentials are not configured.');
+			return false;
+		}
+		$mail->Username   = $smtpUser;
+		$mail->Password   = $smtpPass;
 		$mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
 		$mail->Port       = 587;
 
-		$mail->setFrom('agravatprem00@gmail.com',"Veggie Village");
+		$mail->setFrom(getenv('SMTP_FROM') ?: 'no-reply@veggievillage.local', "Veggie Village");
 		$mail->addAddress($email);
 
 		//Content
 		$mail->isHTML(true);
 		$mail->Subject = 'Email Verification from Veggie Village';
+		$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+		$hostName = $_SERVER['HTTP_HOST'] ?? 'localhost:10000';
+		$appUrl = rtrim(getenv('APP_URL') ?: ($scheme . '://' . $hostName), '/');
+		$verifyUrl = $appUrl . '/backends/verify.php?email=' . urlencode($email) . '&v_code=' . urlencode($v_code);
+
 		$mail->Body    = "Thanks for registration!
 		Click the link to verify the email address
-		<a href='http://localhost/veggie_village/backends/verify.php?email=$email&v_code=$v_code'>Verify</a>";
+		<a href='$verifyUrl'>Verify</a>";
 
 		$mail->send();
 		return true;

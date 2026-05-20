@@ -2,11 +2,11 @@
 		<div class="navbar-fixed">
 		<nav>
 		    <div class="nav-wrapper">
-		      <a href="/veggie_village" class="brand-logo">Veggie Village</a>
+		      <a href="index.php" class="brand-logo">Veggie Village</a>
 		      <a href="#" data-target="mobile-demo" class="sidenav-trigger"><i class="material-icons">menu</i></a>
 		      <ul class="right hide-on-med-and-down">
-		        <li><a href="/veggie_village" class="hvr-grow">Home</a></li>
-		        <li><a href="/veggie_village/about-veggie-village.php" class="hvr-grow">About Us</a></li>
+		        <li><a href="index.php" class="hvr-grow">Home</a></li>
+		        <li><a href="about-veggie-village.php" class="hvr-grow">About Us</a></li>
 		        <li><a href="food-categories.php" class="hvr-grow">Categories</a></li>
 		        <li><a href="foods.php" class="hvr-grow">Foods</a></li>
 		        <li><a href="#" class="hvr-grow" onclick="toggleModal('Contact Info', 'You can contact us directly by calling to this number +1 602-944-1088. Check the bottom Footer Section of the website for more info.');">Contact</a></li>
@@ -30,12 +30,12 @@
 
 		<ul class="sidenav" id="mobile-demo">
     <li>
-        <a href="/veggie_village">
+        <a href="index.php">
             <i class="material-icons">home</i> Home
         </a>
     </li>
     <li>
-        <a href="/veggie_village/about-veggie-village.php">
+        <a href="about-veggie-village.php">
             <i class="material-icons">info</i> About Us
         </a>
     </li>

@@ -28,7 +28,7 @@ $(document).ready(function(){
 		} else {
 
 			$.ajax({
-	            url :'/veggie_village/backends/register.php',
+	            url :'backends/register.php',
 	            type:'POST',
 	            data :{
 	            'name':name,
@@ -87,7 +87,7 @@ $(document).ready(function(){
 		} else {
 
 			$.ajax({
-	            url :'/veggie_village/backends/login.php',
+	            url :'backends/login.php',
 	            type:'POST',
 	            data :{
 	            'email':email,
