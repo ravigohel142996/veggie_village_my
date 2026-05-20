@@ -1,6 +1,6 @@
 <?php
 
-function veggieVillageEnsureDatabaseInitialized(string $host, string $user, string $pwd, string $database): void
+function veggieVillageEnsureDatabaseInitialized(string $host, string $user, string $password, string $database): void
 {
     static $isChecked = false;
 
@@ -10,7 +10,7 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
     $isChecked = true;
 
     mysqli_report(MYSQLI_REPORT_OFF);
-    $mysqli = new mysqli($host, $user, $pwd);
+    $mysqli = new mysqli($host, $user, $password);
 
     if ($mysqli->connect_errno) {
         throw new Exception('Database connection failed: ' . $mysqli->connect_error);
