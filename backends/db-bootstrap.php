@@ -45,6 +45,7 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
 
     $sqlPaths = [
         __DIR__ . '/../veggie_village_db.sql',
+        // Backward compatibility for the existing repository filename.
         __DIR__ . '/../veggei_village_db.sql',
     ];
 
@@ -70,12 +71,20 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
         throw new Exception('Database import failed: ' . $mysqli->error);
     }
 
-    do {
+    while (true) {
         $queryResult = $mysqli->store_result();
         if ($queryResult instanceof mysqli_result) {
             $queryResult->free();
         }
-    } while ($mysqli->more_results() && $mysqli->next_result());
+
+        if (!$mysqli->more_results()) {
+            break;
+        }
+
+        if (!$mysqli->next_result()) {
+            throw new Exception('Database import failed: ' . $mysqli->error);
+        }
+    }
 
     if ($mysqli->errno) {
         throw new Exception('Database import failed: ' . $mysqli->error);

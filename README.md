@@ -52,7 +52,7 @@ Open: `http://localhost:10000`
 
 ## Database setup
 
-On first deployment, the app now bootstraps the database automatically:
+The app now performs an automatic database bootstrap check at startup and initializes the database when it is empty:
 
 - creates the database (from `DB_NAME`) if it does not exist
 - checks whether tables exist
