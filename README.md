@@ -56,7 +56,7 @@ On first deployment, the app now bootstraps the database automatically:
 
 - creates the database (from `DB_NAME`) if it does not exist
 - checks whether tables exist
-- imports `veggei_village_db.sql` automatically when no tables are present
+- imports `veggie_village_db.sql` automatically when no tables are present (and also supports the existing `veggei_village_db.sql` filename)
 
 This works for Render and Railway deployments without manual SQL import.
 
