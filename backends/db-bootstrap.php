@@ -97,12 +97,21 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
 
 function veggieVillageExtractDumpTables(string $sqlDump): array
 {
-    preg_match_all('/CREATE TABLE\s+`([^`]+)`/i', $sqlDump, $matches);
+    preg_match_all('/CREATE TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+(?:`([^`]+)`|"([^"]+)"|([a-zA-Z0-9_]+))/i', $sqlDump, $matches);
     if (!isset($matches[1])) {
         return [];
     }
 
-    $tables = array_values(array_unique($matches[1]));
+    $tables = [];
+    $totalMatches = count($matches[0]);
+    for ($i = 0; $i < $totalMatches; $i++) {
+        $name = $matches[1][$i] !== '' ? $matches[1][$i] : ($matches[2][$i] !== '' ? $matches[2][$i] : $matches[3][$i]);
+        if ($name !== '') {
+            $tables[] = $name;
+        }
+    }
+
+    $tables = array_values(array_unique($tables));
     sort($tables);
 
     return $tables;
@@ -168,17 +177,22 @@ function veggieVillageFilterDumpForMissingTables(string $sqlDump, array $missing
             continue;
         }
 
-        if (preg_match('/^(CREATE TABLE|INSERT INTO|ALTER TABLE)\s+`([^`]+)`/i', $trimmed, $matches) === 1) {
-            $tableName = $matches[2];
-            if (!isset($missingSet[$tableName])) {
-                continue;
+        $statementWithSemicolon = rtrim($trimmed, ';') . ';';
+        $tableName = veggieVillageExtractTargetTableName($trimmed);
+
+        if ($tableName !== null) {
+            if (isset($missingSet[$tableName])) {
+                $filteredStatements[] = $statementWithSemicolon;
             }
+            continue;
         }
 
-        $filteredStatements[] = $trimmed;
+        if (veggieVillageIsGlobalDumpStatement($trimmed)) {
+            $filteredStatements[] = $statementWithSemicolon;
+        }
     }
 
-    return implode(";\n", $filteredStatements) . ";\n";
+    return implode("\n", $filteredStatements) . "\n";
 }
 
 function veggieVillageSplitSqlStatements(string $sql): array
@@ -231,4 +245,34 @@ function veggieVillageSplitSqlStatements(string $sql): array
     }
 
     return $statements;
+}
+
+function veggieVillageExtractTargetTableName(string $statement): ?string
+{
+    $pattern = '/^(CREATE TABLE(?:\s+IF\s+NOT\s+EXISTS)?|INSERT INTO|ALTER TABLE)\s+(?:`([^`]+)`|"([^"]+)"|([a-zA-Z0-9_]+))/i';
+    if (preg_match($pattern, $statement, $matches) !== 1) {
+        return null;
+    }
+
+    if (!empty($matches[2])) {
+        return $matches[2];
+    }
+
+    if (!empty($matches[3])) {
+        return $matches[3];
+    }
+
+    if (!empty($matches[4])) {
+        return $matches[4];
+    }
+
+    return null;
+}
+
+function veggieVillageIsGlobalDumpStatement(string $statement): bool
+{
+    return preg_match(
+        '/^(--|\/\*|SET\b|START\s+TRANSACTION\b|COMMIT\b|ROLLBACK\b|LOCK\s+TABLES\b|UNLOCK\s+TABLES\b)/i',
+        $statement
+    ) === 1;
 }
