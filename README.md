@@ -1,27 +1,19 @@
-# Veggie Village - Render Deployment Guide
+# Veggie Village - Docker + Render Deployment Guide
 
-This project is now deployment-ready for Render using PHP and MySQL.
+This repository is configured for direct deployment on Render using Docker with **PHP 8.2 + Apache**.
 
-## Final folder structure
+## Deployment-ready files
 
-```
-veggie_village/
-├── admin/
-├── api/
-├── backends/
-├── chunks/
-├── css/
-├── images/
-├── js/
-├── composer.json
-├── render.yaml
-├── index.php
-└── README.md
-```
+- `Dockerfile` (PHP 8.2 Apache image + required extensions)
+- `docker/apache-vhost.conf` (Apache vhost with `AllowOverride All`)
+- `docker/start-apache.sh` (bind Apache to Render `$PORT`)
+- `.htaccess` (rewrite support and auth header forwarding)
+- `.dockerignore` (clean build context)
+- `render.yaml` (Render Blueprint using Docker)
 
-## Environment variables
+## Required environment variables
 
-Set these in Render (**Dashboard -> Service -> Environment**):
+Configure these in Render service settings (or use Blueprint sync):
 
 - `DB_HOST`
 - `DB_USER`
@@ -31,34 +23,39 @@ Set these in Render (**Dashboard -> Service -> Environment**):
 - `SMTP_USER`
 - `SMTP_PASS`
 - `SMTP_FROM`
+- `APP_DEBUG` (`false` in production)
 
-## Exact Render settings
+## Render deployment
 
-- **Runtime:** `PHP`
-- **Build Command:** `composer install --no-dev --optimize-autoloader`
-- **Start Command:** `php -S 0.0.0.0:$PORT -t .`
-- **Root Directory:** repository root
+1. Push the repository to GitHub.
+2. In Render, create a **Blueprint** service from the repository.
+3. Render will detect `render.yaml` and build using `Dockerfile`.
+4. Set required env vars.
+5. Deploy.
 
-If using Blueprint deploy from GitHub, Render will read `render.yaml` automatically.
+## Local Docker run
 
-## Local verification command
-
-Run from project root:
+From repository root:
 
 ```bash
-php -S 0.0.0.0:10000 -t .
+docker build -t veggie-village .
+docker run --rm -p 10000:10000 \
+  -e PORT=10000 \
+  -e DB_HOST=host.docker.internal \
+  -e DB_USER=root \
+  -e DB_PASS= \
+  -e DB_NAME=vaggie_village \
+  veggie-village
 ```
 
-Then open: `http://localhost:10000`
+Open: `http://localhost:10000`
 
-## Deployment readiness summary
+## Database setup
 
-- Database config moved to environment variables (`getenv`)
-- DB connection includes production error logging/handling
-- Hardcoded localhost/XAMPP-style URL dependencies removed
-- Asset/API/app paths updated for root-domain deployment
-- Render runtime and start command configured
+Import `veggei_village_db.sql` into your MySQL server, then point env vars to that database.
 
-## Database setup note
+## Notes
 
-Import `veggei_village_db.sql` into your MySQL instance, then match Render env vars to that database.
+- Database credentials are read via `getenv()` in `backends/config.php`.
+- Production-safe exception handling is configured in `backends/bootstrap.php`.
+- Admin uploads continue using the `images/` directory, now writable in container runtime.

@@ -1,10 +1,10 @@
 services:
   - type: web
     name: veggie-village
-    runtime: php
+    env: docker
     plan: free
-    buildCommand: composer install --no-dev --optimize-autoloader
-    startCommand: php -S 0.0.0.0:$PORT -t .
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /index.php
     envVars:
       - key: DB_HOST
         sync: false
@@ -22,3 +22,5 @@ services:
         sync: false
       - key: SMTP_FROM
         sync: false
+      - key: APP_DEBUG
+        value: "false"
