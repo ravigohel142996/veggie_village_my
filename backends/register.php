@@ -42,7 +42,7 @@ function sendMail($email,$v_code){
 		$mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
 		$mail->Port       = 587;
 
-		$mail->setFrom(getenv('SMTP_FROM') ?: 'no-reply@veggievillage.local',"Veggie Village");
+		$mail->setFrom(getenv('SMTP_FROM') ?: 'no-reply@veggievillage.local', "Veggie Village");
 		$mail->addAddress($email);
 
 		//Content
