@@ -64,6 +64,8 @@ The app connects to an existing MySQL database using environment variables:
 
 For Railway + Render deployments, ensure these values point to the Railway MySQL instance.
 
+On startup, the app now automatically bootstraps the database schema from `veggei_village_db.sql` (or `veggie_village_db.sql` if present): it checks for missing tables and creates only missing ones without re-importing existing tables/data.
+
 ## Notes
 
 - `backends/config.php` reads DB env vars and validates connectivity with `mysqli` using host/user/pass/name/port.
