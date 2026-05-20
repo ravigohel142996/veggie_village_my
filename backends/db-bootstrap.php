@@ -27,16 +27,24 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
         throw new Exception('Database selection failed: ' . $mysqli->error);
     }
 
-    $escapedDatabase = $mysqli->real_escape_string($database);
-    $tableCountQuery = "SELECT COUNT(*) AS total FROM information_schema.tables WHERE table_schema = '{$escapedDatabase}'";
-    $result = $mysqli->query($tableCountQuery);
-    if (!$result) {
+    $tableCountStmt = $mysqli->prepare('SELECT COUNT(*) AS total FROM information_schema.tables WHERE table_schema = ?');
+    if (!$tableCountStmt) {
         throw new Exception('Database table check failed: ' . $mysqli->error);
+    }
+    $tableCountStmt->bind_param('s', $database);
+    if (!$tableCountStmt->execute()) {
+        throw new Exception('Database table check failed: ' . $tableCountStmt->error);
+    }
+
+    $result = $tableCountStmt->get_result();
+    if (!$result) {
+        throw new Exception('Database table check failed: ' . $tableCountStmt->error);
     }
 
     $row = $result->fetch_assoc();
     $tableCount = (int) ($row['total'] ?? 0);
     $result->free();
+    $tableCountStmt->close();
 
     if ($tableCount !== 0) {
         $mysqli->close();
