@@ -97,7 +97,11 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
 
 function veggieVillageExtractDumpTables(string $sqlDump): array
 {
-    preg_match_all('/CREATE TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+(?:`([^`]+)`|"([^"]+)"|([a-zA-Z0-9_]+))/i', $sqlDump, $matches);
+    preg_match_all(
+        '/CREATE TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+(?:(?:`[^`]+`|"[^"]+"|[a-zA-Z0-9_]+)\s*\.\s*)?(?:`([^`]+)`|"([^"]+)"|([a-zA-Z0-9_]+))/i',
+        $sqlDump,
+        $matches
+    );
     if (!isset($matches[1])) {
         return [];
     }
@@ -249,24 +253,12 @@ function veggieVillageSplitSqlStatements(string $sql): array
 
 function veggieVillageExtractTargetTableName(string $statement): ?string
 {
-    $pattern = '/^(CREATE TABLE(?:\s+IF\s+NOT\s+EXISTS)?|INSERT INTO|ALTER TABLE)\s+(?:`([^`]+)`|"([^"]+)"|([a-zA-Z0-9_]+))/i';
+    $pattern = '/^(CREATE TABLE(?:\s+IF\s+NOT\s+EXISTS)?|INSERT INTO|ALTER TABLE)\s+((?:`[^`]+`|"[^"]+"|[a-zA-Z0-9_]+)(?:\s*\.\s*(?:`[^`]+`|"[^"]+"|[a-zA-Z0-9_]+))?)/i';
     if (preg_match($pattern, $statement, $matches) !== 1) {
         return null;
     }
 
-    if (!empty($matches[2])) {
-        return $matches[2];
-    }
-
-    if (!empty($matches[3])) {
-        return $matches[3];
-    }
-
-    if (!empty($matches[4])) {
-        return $matches[4];
-    }
-
-    return null;
+    return veggieVillageNormalizeTableIdentifier($matches[2]);
 }
 
 function veggieVillageIsGlobalDumpStatement(string $statement): bool
@@ -275,4 +267,26 @@ function veggieVillageIsGlobalDumpStatement(string $statement): bool
         '/^(--|\/\*|SET\b|START\s+TRANSACTION\b|COMMIT\b|ROLLBACK\b|LOCK\s+TABLES\b|UNLOCK\s+TABLES\b)/i',
         $statement
     ) === 1;
+}
+
+function veggieVillageNormalizeTableIdentifier(string $identifier): ?string
+{
+    $trimmed = trim($identifier);
+    if ($trimmed === '') {
+        return null;
+    }
+
+    if (preg_match('/^(?:`[^`]+`|"[^"]+"|[a-zA-Z0-9_]+)\s*\.\s*(`[^`]+`|"[^"]+"|[a-zA-Z0-9_]+)$/', $trimmed, $matches) === 1) {
+        $trimmed = $matches[1];
+    }
+
+    if (preg_match('/^`([^`]+)`$/', $trimmed, $matches) === 1) {
+        return $matches[1];
+    }
+
+    if (preg_match('/^"([^"]+)"$/', $trimmed, $matches) === 1) {
+        return $matches[1];
+    }
+
+    return preg_match('/^[a-zA-Z0-9_]+$/', $trimmed) === 1 ? $trimmed : null;
 }
