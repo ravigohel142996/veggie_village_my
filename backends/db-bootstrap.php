@@ -64,9 +64,10 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
 
     $sqlDump = file_get_contents($sqlPath);
     if ($sqlDump === false) {
-        throw new Exception('Database dump read failed: ' . $sqlPath);
+        throw new Exception('Failed to read database dump file: ' . $sqlPath);
     }
 
+    // Import is restricted to trusted, local repository SQL dump files listed in $sqlPaths.
     if (!$mysqli->multi_query($sqlDump)) {
         throw new Exception('Database import failed: ' . $mysqli->error);
     }

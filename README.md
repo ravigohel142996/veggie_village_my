@@ -56,7 +56,7 @@ The app now performs an automatic database bootstrap check at startup and initia
 
 - creates the database (from `DB_NAME`) if it does not exist
 - checks whether tables exist
-- imports `veggie_village_db.sql` automatically when no tables are present (and also supports the existing `veggei_village_db.sql` filename)
+- imports `veggie_village_db.sql` automatically when no tables are present (also supports legacy misspelled filename `veggei_village_db.sql`)
 
 This works for Render and Railway deployments without manual SQL import.
 
