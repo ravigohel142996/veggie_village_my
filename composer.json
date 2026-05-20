@@ -3,7 +3,12 @@
   "description": "Veggie Village PHP application",
   "type": "project",
   "require": {
-    "php": ">=8.1"
+    "php": "^8.2",
+    "ext-intl": "*",
+    "ext-mysqli": "*",
+    "ext-pdo": "*",
+    "ext-pdo_mysql": "*",
+    "ext-zip": "*"
   },
   "config": {
     "optimize-autoloader": true,

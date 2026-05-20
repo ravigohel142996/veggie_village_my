@@ -1,0 +1,9 @@
+.git
+.github
+.phpintel
+vendor
+node_modules
+*.log
+.env
+.env.*
+docker-compose*.yml
