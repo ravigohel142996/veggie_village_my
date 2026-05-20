@@ -66,6 +66,7 @@ For Railway + Render deployments, ensure these values point to the Railway MySQL
 
 ## Notes
 
-- Database credentials are read via `getenv()` in `backends/config.php` and used by `backends/connection-pdo.php`.
+- `backends/config.php` reads DB env vars and validates connectivity with `mysqli` using host/user/pass/name/port.
+- `backends/connection-pdo.php` creates the shared PDO connection used throughout the app.
 - Production-safe exception handling is configured in `backends/bootstrap.php`.
 - Admin uploads continue using the `images/` directory, now writable in container runtime.
