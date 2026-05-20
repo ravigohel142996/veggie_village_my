@@ -31,8 +31,14 @@ function sendMail($email,$v_code){
 		$mail->isSMTP();
 		$mail->Host       = 'smtp.gmail.com';
 		$mail->SMTPAuth   = true;
-		$mail->Username   = getenv('SMTP_USER') ?: '';
-		$mail->Password   = getenv('SMTP_PASS') ?: '';
+		$smtpUser = getenv('SMTP_USER');
+		$smtpPass = getenv('SMTP_PASS');
+		if (!$smtpUser || !$smtpPass) {
+			error_log('SMTP credentials are not configured.');
+			return false;
+		}
+		$mail->Username   = $smtpUser;
+		$mail->Password   = $smtpPass;
 		$mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
 		$mail->Port       = 587;
 
