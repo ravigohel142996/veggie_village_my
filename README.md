@@ -19,6 +19,7 @@ Configure these in Render service settings (or use Blueprint sync):
 - `DB_USER`
 - `DB_PASS`
 - `DB_NAME`
+- `DB_PORT` (defaults to `3306`)
 - `APP_URL` (example: `https://your-service-name.onrender.com`)
 - `SMTP_USER`
 - `SMTP_PASS`
@@ -41,10 +42,11 @@ From repository root:
 docker build -t veggie-village .
 docker run --rm -p 10000:10000 \
   -e PORT=10000 \
-  -e DB_HOST=host.docker.internal \
-  -e DB_USER=root \
-  -e DB_PASS= \
-  -e DB_NAME=vaggie_village \
+  -e DB_HOST=your-db-host \
+  -e DB_USER=your-db-user \
+  -e DB_PASS=your-db-password \
+  -e DB_NAME=your-db-name \
+  -e DB_PORT=3306 \
   veggie-village
 ```
 
@@ -52,16 +54,19 @@ Open: `http://localhost:10000`
 
 ## Database setup
 
-The app now performs an automatic database bootstrap check at startup and initializes the database when it is empty:
+The app connects to an existing MySQL database using environment variables:
 
-- creates the database (from `DB_NAME`) if it does not exist
-- checks whether tables exist
-- imports `veggie_village_db.sql` automatically when no tables are present (also supports legacy misspelled filename `veggei_village_db.sql`)
+- `DB_HOST`
+- `DB_USER`
+- `DB_PASS`
+- `DB_NAME`
+- `DB_PORT`
 
-This works for Render and Railway deployments without manual SQL import.
+For Railway + Render deployments, ensure these values point to the Railway MySQL instance.
 
 ## Notes
 
-- Database credentials are read via `getenv()` in `backends/config.php`.
+- `backends/config.php` reads DB env vars and validates connectivity with `mysqli` using host/user/pass/name/port.
+- `backends/connection-pdo.php` creates the shared PDO connection used throughout the app.
 - Production-safe exception handling is configured in `backends/bootstrap.php`.
 - Admin uploads continue using the `images/` directory, now writable in container runtime.
