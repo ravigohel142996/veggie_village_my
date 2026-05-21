@@ -63,6 +63,16 @@ function veggieVillageNormalizeSqlStatements(array $statements): array
     $normalizedStatements = [];
 
     foreach ($statements as $statement) {
+        if (preg_match('/^\s*INSERT\s+INTO\s+/i', $statement) === 1) {
+            $normalizedStatements[] = preg_replace(
+                '/^\s*INSERT\s+INTO\s+/i',
+                'INSERT IGNORE INTO ',
+                $statement,
+                1
+            ) ?? $statement;
+            continue;
+        }
+
         if (preg_match('/^\s*CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+/i', $statement) === 1) {
             $normalizedStatements[] = $statement;
             continue;
@@ -77,6 +87,32 @@ function veggieVillageNormalizeSqlStatements(array $statements): array
     }
 
     return $normalizedStatements;
+}
+
+function veggieVillageAllRequiredTablesExist(array $existingTables, array $requiredTables): bool
+{
+    foreach ($requiredTables as $requiredTable) {
+        if (!isset($existingTables[strtolower($requiredTable)])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function veggieVillageTableHasRows(mysqli $mysqli, string $table): bool
+{
+    $safeTable = '`' . str_replace('`', '``', $table) . '`';
+    $result = $mysqli->query("SELECT 1 FROM {$safeTable} LIMIT 1");
+
+    if ($result === false) {
+        throw new Exception('Database table check failed: ' . $mysqli->error);
+    }
+
+    $hasRows = $result->num_rows > 0;
+    $result->free();
+
+    return $hasRows;
 }
 
 function veggieVillageGetExistingTables(mysqli $mysqli): array
@@ -179,42 +215,52 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
         throw new Exception('Database selection failed: ' . $mysqli->error);
     }
 
-    $sqlPaths = [
-        __DIR__ . '/../veggie_village_db.sql',
-        // Backward compatibility for the existing repository filename.
-        __DIR__ . '/../veggei_village_db.sql',
-    ];
-
-    $sqlPath = null;
-    foreach ($sqlPaths as $candidatePath) {
-        $resolvedPath = realpath($candidatePath);
-        if ($resolvedPath !== false && is_readable($resolvedPath)) {
-            $sqlPath = $resolvedPath;
-            break;
-        }
-    }
-
-    if ($sqlPath === null) {
-        throw new Exception('Database dump file not found.');
-    }
-
-    $sqlDump = file_get_contents($sqlPath);
-    if ($sqlDump === false) {
-        throw new Exception('Failed to read database dump file: ' . $sqlPath);
-    }
-
-    $statements = veggieVillageNormalizeSqlStatements(veggieVillageLoadSqlStatements($sqlDump));
-    if ($statements === []) {
-        throw new Exception('Database dump file is empty: ' . $sqlPath);
-    }
-
     $requiredTables = veggieVillageGetRequiredTables();
-    veggieVillageExecuteStatements($mysqli, $statements);
+    $existingTables = veggieVillageGetExistingTables($mysqli);
+    $hasAllRequiredTables = veggieVillageAllRequiredTablesExist($existingTables, $requiredTables);
+    $shouldRunImport = true;
 
-    $existingTablesAfterImport = veggieVillageGetExistingTables($mysqli);
-    foreach ($requiredTables as $requiredTable) {
-        if (!isset($existingTablesAfterImport[strtolower($requiredTable)])) {
-            throw new Exception('Database import failed: required table "' . $requiredTable . '" is still missing.');
+    if ($hasAllRequiredTables) {
+        $shouldRunImport = !veggieVillageTableHasRows($mysqli, 'admin');
+    }
+
+    if ($shouldRunImport) {
+        $sqlPaths = [
+            __DIR__ . '/../veggie_village_db.sql',
+            // Backward compatibility for the existing repository filename.
+            __DIR__ . '/../veggei_village_db.sql',
+        ];
+
+        $sqlPath = null;
+        foreach ($sqlPaths as $candidatePath) {
+            $resolvedPath = realpath($candidatePath);
+            if ($resolvedPath !== false && is_readable($resolvedPath)) {
+                $sqlPath = $resolvedPath;
+                break;
+            }
+        }
+
+        if ($sqlPath === null) {
+            throw new Exception('Database dump file not found.');
+        }
+
+        $sqlDump = file_get_contents($sqlPath);
+        if ($sqlDump === false) {
+            throw new Exception('Failed to read database dump file: ' . $sqlPath);
+        }
+
+        $statements = veggieVillageNormalizeSqlStatements(veggieVillageLoadSqlStatements($sqlDump));
+        if ($statements === []) {
+            throw new Exception('Database dump file is empty: ' . $sqlPath);
+        }
+
+        veggieVillageExecuteStatements($mysqli, $statements);
+
+        $existingTablesAfterImport = veggieVillageGetExistingTables($mysqli);
+        foreach ($requiredTables as $requiredTable) {
+            if (!isset($existingTablesAfterImport[strtolower($requiredTable)])) {
+                throw new Exception('Database import failed: required table "' . $requiredTable . '" is still missing.');
+            }
         }
     }
 
