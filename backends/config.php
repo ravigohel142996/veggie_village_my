@@ -22,7 +22,7 @@ if ($host === '' || strtolower($host) === 'localhost' || str_starts_with($host, 
 try {
     veggieVillageEnsureDatabaseInitialized($host, $user, $pass, $db, $port);
 } catch (Throwable $e) {
-    error_log('Database bootstrap failed; application may not function correctly until DB is initialized: ' . $e->getMessage());
+    error_log('WARNING: Database bootstrap failed; application may not function correctly until DB is initialized: ' . $e->getMessage());
 }
 
 error_log('DB_HOST=' . $host);
