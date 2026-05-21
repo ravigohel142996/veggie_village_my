@@ -61,11 +61,12 @@ function veggieVillageGetRequiredTables(): array
 function veggieVillageNormalizeSqlStatements(array $statements): array
 {
     $normalizedStatements = [];
+    $insertIntoPattern = '/^\s*INSERT\s+INTO\s+/i';
 
     foreach ($statements as $statement) {
-        if (preg_match('/^\s*INSERT\s+INTO\s+/i', $statement) === 1) {
+        if (preg_match($insertIntoPattern, $statement) === 1) {
             $normalizedStatements[] = preg_replace(
-                '/^\s*INSERT\s+INTO\s+/i',
+                $insertIntoPattern,
                 'INSERT IGNORE INTO ',
                 $statement,
                 1
