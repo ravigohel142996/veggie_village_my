@@ -19,7 +19,11 @@ if ($host === '' || strtolower($host) === 'localhost' || str_starts_with($host, 
     die('Database connection failed: invalid DB_HOST.');
 }
 
-veggieVillageEnsureDatabaseInitialized($host, $user, $pass, $db, $port);
+try {
+    veggieVillageEnsureDatabaseInitialized($host, $user, $pass, $db, $port);
+} catch (Throwable $e) {
+    error_log('WARNING: Database bootstrap failed; application may not function correctly until DB is initialized: ' . $e->getMessage());
+}
 
 error_log('DB_HOST=' . $host);
 error_log('DB_PORT=' . $port);
