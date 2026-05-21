@@ -1,5 +1,8 @@
 <?php
 
+const VEGGIE_VILLAGE_INITIAL_PAGE_VIEWS_ID = 1;
+const VEGGIE_VILLAGE_INITIAL_VIEW_COUNT = 0;
+
 function veggieVillageLoadSqlStatements(string $sqlDump): array
 {
     $statements = [];
@@ -9,8 +12,8 @@ function veggieVillageLoadSqlStatements(string $sqlDump): array
     $inDoubleQuote = false;
     $escaped = false;
 
-    for ($index = 0; $index < $length; $index++) {
-        $char = $sqlDump[$index];
+    for ($position = 0; $position < $length; $position++) {
+        $char = $sqlDump[$position];
         $buffer .= $char;
 
         if ($escaped) {
@@ -92,6 +95,14 @@ function veggieVillageFilterStatementsForTables(array $statements, array $tables
         return [];
     }
 
+    $escapedTables = [];
+    foreach ($tables as $table) {
+        $escapedTables[] = preg_quote($table, '/');
+    }
+    $escapedTableAlternation = implode('|', $escapedTables);
+    // Match referenced tables in SQL statements in either backtick-quoted form (`table`) or plain word form (table).
+    $tableReferencePattern = '/(?:`(?:' . $escapedTableAlternation . ')`|\b(?:' . $escapedTableAlternation . ')\b)/i';
+
     $filteredStatements = [];
     foreach ($statements as $statement) {
         $trimmed = ltrim($statement);
@@ -105,16 +116,13 @@ function veggieVillageFilterStatementsForTables(array $statements, array $tables
             || str_starts_with($trimmed, 'COMMIT')
             || str_starts_with($trimmed, '/*!')
         ) {
+            // Keep SQL session/transaction context statements even when importing only specific table statements.
             $filteredStatements[] = $statement;
             continue;
         }
 
-        foreach ($tables as $table) {
-            $pattern = '/(?:`' . preg_quote($table, '/') . '`|\b' . preg_quote($table, '/') . '\b)/i';
-            if (preg_match($pattern, $statement) === 1) {
-                $filteredStatements[] = $statement;
-                break;
-            }
+        if (preg_match($tableReferencePattern, $statement) === 1) {
+            $filteredStatements[] = $statement;
         }
     }
 
@@ -208,7 +216,7 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
         } else {
             $filteredStatements = veggieVillageFilterStatementsForTables($statements, $missingTables);
             if ($filteredStatements === []) {
-                throw new Exception('Database import failed: dump does not contain required missing table definitions.');
+                throw new Exception('Database import failed: dump does not contain definitions for required missing tables: ' . implode(', ', $missingTables));
             }
             veggieVillageExecuteStatements($mysqli, $filteredStatements);
         }
@@ -221,10 +229,18 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
         }
     }
 
-    $pageViewSeedSql = 'INSERT IGNORE INTO page_views (id, view_count) VALUES (1, 0)';
-    if (!$mysqli->query($pageViewSeedSql)) {
-        throw new Exception('Database setup failed: unable to seed page_views table. ' . $mysqli->error);
+    $pageViewsSeedStmt = $mysqli->prepare('INSERT IGNORE INTO page_views (id, view_count) VALUES (?, ?)');
+    if (!$pageViewsSeedStmt) {
+        throw new Exception('Database setup failed: unable to prepare page_views seed statement. ' . $mysqli->error);
     }
+
+    $pageViewsId = VEGGIE_VILLAGE_INITIAL_PAGE_VIEWS_ID;
+    $initialViewCount = VEGGIE_VILLAGE_INITIAL_VIEW_COUNT;
+    $pageViewsSeedStmt->bind_param('ii', $pageViewsId, $initialViewCount);
+    if (!$pageViewsSeedStmt->execute()) {
+        throw new Exception('Database setup failed: unable to seed page_views table. ' . $pageViewsSeedStmt->error);
+    }
+    $pageViewsSeedStmt->close();
 
     $mysqli->close();
 }
