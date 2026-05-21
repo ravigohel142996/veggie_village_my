@@ -1,5 +1,135 @@
 <?php
 
+function veggieVillageLoadSqlStatements(string $sqlDump): array
+{
+    $statements = [];
+    $buffer = '';
+    $length = strlen($sqlDump);
+    $inSingleQuote = false;
+    $inDoubleQuote = false;
+    $escaped = false;
+
+    for ($index = 0; $index < $length; $index++) {
+        $char = $sqlDump[$index];
+        $buffer .= $char;
+
+        if ($escaped) {
+            $escaped = false;
+            continue;
+        }
+
+        if ($char === '\\') {
+            $escaped = true;
+            continue;
+        }
+
+        if (!$inDoubleQuote && $char === "'") {
+            $inSingleQuote = !$inSingleQuote;
+            continue;
+        }
+
+        if (!$inSingleQuote && $char === '"') {
+            $inDoubleQuote = !$inDoubleQuote;
+            continue;
+        }
+
+        if (!$inSingleQuote && !$inDoubleQuote && $char === ';') {
+            $statement = trim($buffer);
+            if ($statement !== '') {
+                $statements[] = $statement;
+            }
+            $buffer = '';
+        }
+    }
+
+    $remaining = trim($buffer);
+    if ($remaining !== '') {
+        $statements[] = $remaining;
+    }
+
+    return $statements;
+}
+
+function veggieVillageGetRequiredTables(): array
+{
+    return ['admin', 'categories', 'food', 'offers', 'orders', 'page_views', 'users'];
+}
+
+function veggieVillageGetExistingTables(mysqli $mysqli, string $database): array
+{
+    $existingTables = [];
+    $tableNamesStmt = $mysqli->prepare('SELECT table_name FROM information_schema.tables WHERE table_schema = ?');
+    if (!$tableNamesStmt) {
+        throw new Exception('Database table check failed: ' . $mysqli->error);
+    }
+
+    $tableNamesStmt->bind_param('s', $database);
+    if (!$tableNamesStmt->execute()) {
+        throw new Exception('Database table check failed: ' . $tableNamesStmt->error);
+    }
+
+    $result = $tableNamesStmt->get_result();
+    if (!$result) {
+        throw new Exception('Database table check failed: ' . $tableNamesStmt->error);
+    }
+
+    while ($row = $result->fetch_assoc()) {
+        $tableName = $row['table_name'] ?? '';
+        if ($tableName !== '') {
+            $existingTables[$tableName] = true;
+        }
+    }
+
+    $result->free();
+    $tableNamesStmt->close();
+
+    return $existingTables;
+}
+
+function veggieVillageFilterStatementsForTables(array $statements, array $tables): array
+{
+    if ($tables === []) {
+        return [];
+    }
+
+    $filteredStatements = [];
+    foreach ($statements as $statement) {
+        $trimmed = ltrim($statement);
+        if ($trimmed === '') {
+            continue;
+        }
+
+        if (
+            str_starts_with($trimmed, 'SET ')
+            || str_starts_with($trimmed, 'START TRANSACTION')
+            || str_starts_with($trimmed, 'COMMIT')
+            || str_starts_with($trimmed, '/*!')
+        ) {
+            $filteredStatements[] = $statement;
+            continue;
+        }
+
+        foreach ($tables as $table) {
+            $needle = '`' . $table . '`';
+            if (stripos($statement, $needle) !== false) {
+                $filteredStatements[] = $statement;
+                break;
+            }
+        }
+    }
+
+    return $filteredStatements;
+}
+
+function veggieVillageExecuteStatements(mysqli $mysqli, array $statements): void
+{
+    foreach ($statements as $statement) {
+        if (!$mysqli->query($statement)) {
+            throw new Exception('Database import failed: ' . $mysqli->error);
+        }
+    }
+}
+
 function veggieVillageEnsureDatabaseInitialized(string $host, string $user, string $password, string $database, int $port = 3306): void
 {
     static $isChecked = false;
@@ -31,30 +161,6 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
         throw new Exception('Database selection failed: ' . $mysqli->error);
     }
 
-    $tableCountStmt = $mysqli->prepare('SELECT COUNT(*) AS total FROM information_schema.tables WHERE table_schema = ?');
-    if (!$tableCountStmt) {
-        throw new Exception('Database table check failed: ' . $mysqli->error);
-    }
-    $tableCountStmt->bind_param('s', $database);
-    if (!$tableCountStmt->execute()) {
-        throw new Exception('Database table check failed: ' . $tableCountStmt->error);
-    }
-
-    $result = $tableCountStmt->get_result();
-    if (!$result) {
-        throw new Exception('Database table check failed: ' . $tableCountStmt->error);
-    }
-
-    $row = $result->fetch_assoc();
-    $tableCount = (int) ($row['total'] ?? 0);
-    $result->free();
-    $tableCountStmt->close();
-
-    if ($tableCount !== 0) {
-        $mysqli->close();
-        return;
-    }
-
     $sqlPaths = [
         __DIR__ . '/../veggie_village_db.sql',
         // Backward compatibility for the existing repository filename.
@@ -79,28 +185,45 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
         throw new Exception('Failed to read database dump file: ' . $sqlPath);
     }
 
-    // Import is restricted to trusted, local repository SQL dump files listed in $sqlPaths.
-    if (!$mysqli->multi_query($sqlDump)) {
-        throw new Exception('Database import failed: ' . $mysqli->error);
+    $statements = veggieVillageLoadSqlStatements($sqlDump);
+    if ($statements === []) {
+        throw new Exception('Database dump file is empty: ' . $sqlPath);
     }
 
-    while (true) {
-        $queryResult = $mysqli->store_result();
-        if ($queryResult instanceof mysqli_result) {
-            $queryResult->free();
-        }
+    $requiredTables = veggieVillageGetRequiredTables();
+    $existingTables = veggieVillageGetExistingTables($mysqli, $database);
 
-        if (!$mysqli->more_results()) {
-            break;
-        }
-
-        if (!$mysqli->next_result()) {
-            throw new Exception('Database import failed: ' . $mysqli->error);
+    $missingTables = [];
+    foreach ($requiredTables as $requiredTable) {
+        if (!isset($existingTables[$requiredTable])) {
+            $missingTables[] = $requiredTable;
         }
     }
 
-    if ($mysqli->errno) {
-        throw new Exception('Database import failed: ' . $mysqli->error);
+    if ($missingTables !== []) {
+        $isFirstImport = count($existingTables) === 0;
+
+        if ($isFirstImport) {
+            veggieVillageExecuteStatements($mysqli, $statements);
+        } else {
+            $filteredStatements = veggieVillageFilterStatementsForTables($statements, $missingTables);
+            if ($filteredStatements === []) {
+                throw new Exception('Database import failed: dump does not contain required missing table definitions.');
+            }
+            veggieVillageExecuteStatements($mysqli, $filteredStatements);
+        }
+    }
+
+    $existingTablesAfterImport = veggieVillageGetExistingTables($mysqli, $database);
+    foreach ($requiredTables as $requiredTable) {
+        if (!isset($existingTablesAfterImport[$requiredTable])) {
+            throw new Exception('Database import failed: required table "' . $requiredTable . '" is still missing.');
+        }
+    }
+
+    $pageViewSeedSql = 'INSERT INTO page_views (id, view_count) VALUES (1, 0) ON DUPLICATE KEY UPDATE view_count = view_count';
+    if (!$mysqli->query($pageViewSeedSql)) {
+        throw new Exception('Database setup failed: unable to seed page_views table. ' . $mysqli->error);
     }
 
     $mysqli->close();
