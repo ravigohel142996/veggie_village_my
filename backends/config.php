@@ -1,6 +1,7 @@
 <?php
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+require_once __DIR__ . '/db-bootstrap.php';
 
 $host = trim(getenv('DB_HOST'));
 $user = trim(getenv('DB_USER'));
@@ -17,6 +18,8 @@ if ($host === '' || strtolower($host) === 'localhost' || str_starts_with($host, 
     error_log('Database connection failed: DB_HOST must be a TCP host and cannot use localhost or a unix socket path.');
     die('Database connection failed: invalid DB_HOST.');
 }
+
+veggieVillageEnsureDatabaseInitialized($host, $user, $pass, $db, $port);
 
 error_log('DB_HOST=' . $host);
 error_log('DB_PORT=' . $port);
