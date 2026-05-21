@@ -63,10 +63,16 @@ function veggieVillageNormalizeSqlStatements(array $statements): array
     $normalizedStatements = [];
 
     foreach ($statements as $statement) {
+        if (preg_match('/^\s*CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+/i', $statement) === 1) {
+            $normalizedStatements[] = $statement;
+            continue;
+        }
+
         $normalizedStatements[] = preg_replace(
-            '/^\s*CREATE\s+TABLE\s+(?!IF\s+NOT\s+EXISTS)/i',
+            '/^\s*CREATE\s+TABLE\s+/i',
             'CREATE TABLE IF NOT EXISTS ',
-            $statement
+            $statement,
+            1
         ) ?? $statement;
     }
 
@@ -119,7 +125,19 @@ function veggieVillageExecuteStatements(mysqli $mysqli, array $statements): void
 {
     foreach ($statements as $statement) {
         try {
-            $mysqli->query($statement);
+            $queryResult = $mysqli->query($statement);
+            if ($queryResult === false) {
+                $errorCode = (int) $mysqli->errno;
+                if (veggieVillageShouldIgnoreSqlError($errorCode, $statement)) {
+                    continue;
+                }
+
+                throw new Exception('Database import failed: ' . $mysqli->error);
+            }
+
+            if ($queryResult instanceof mysqli_result) {
+                $queryResult->free();
+            }
         } catch (mysqli_sql_exception $e) {
             if (veggieVillageShouldIgnoreSqlError((int) $e->getCode(), $statement)) {
                 continue;
