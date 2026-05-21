@@ -58,82 +58,92 @@ function veggieVillageGetRequiredTables(): array
     return ['admin', 'categories', 'food', 'offers', 'orders', 'page_views', 'users'];
 }
 
-function veggieVillageGetExistingTables(mysqli $mysqli, string $database): array
+function veggieVillageNormalizeSqlStatements(array $statements): array
+{
+    $normalizedStatements = [];
+
+    foreach ($statements as $statement) {
+        if (preg_match('/^\s*CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+/i', $statement) === 1) {
+            $normalizedStatements[] = $statement;
+            continue;
+        }
+
+        $normalizedStatements[] = preg_replace(
+            '/^\s*CREATE\s+TABLE\s+/i',
+            'CREATE TABLE IF NOT EXISTS ',
+            $statement,
+            1
+        ) ?? $statement;
+    }
+
+    return $normalizedStatements;
+}
+
+function veggieVillageGetExistingTables(mysqli $mysqli): array
 {
     $existingTables = [];
-    $tableNamesStmt = $mysqli->prepare('SELECT table_name FROM information_schema.tables WHERE table_schema = ?');
-    if (!$tableNamesStmt) {
+    $result = $mysqli->query('SHOW TABLES');
+    if (!$result) {
         throw new Exception('Database table check failed: ' . $mysqli->error);
     }
 
-    $tableNamesStmt->bind_param('s', $database);
-    if (!$tableNamesStmt->execute()) {
-        throw new Exception('Database table check failed: ' . $tableNamesStmt->error);
-    }
-
-    $result = $tableNamesStmt->get_result();
-    if (!$result) {
-        throw new Exception('Database table check failed: ' . $tableNamesStmt->error);
-    }
-
-    while ($row = $result->fetch_assoc()) {
-        $tableName = $row['table_name'] ?? '';
+    while ($row = $result->fetch_row()) {
+        $tableName = $row[0] ?? '';
         if ($tableName !== '') {
-            $existingTables[$tableName] = true;
+            $existingTables[strtolower($tableName)] = true;
         }
     }
 
     $result->free();
-    $tableNamesStmt->close();
 
     return $existingTables;
 }
 
-function veggieVillageFilterStatementsForTables(array $statements, array $tables): array
+function veggieVillageShouldIgnoreSqlError(int $errorCode, string $statement): bool
 {
-    if ($tables === []) {
-        return [];
+    $normalizedStatement = strtoupper(ltrim($statement));
+
+    if ($errorCode === 1050 && str_starts_with($normalizedStatement, 'CREATE TABLE')) {
+        return true;
     }
 
-    $escapedTables = [];
-    foreach ($tables as $table) {
-        $escapedTables[] = preg_quote($table, '/');
-    }
-    $escapedTableAlternation = implode('|', $escapedTables);
-    // Match referenced tables in SQL statements in either backtick-quoted form (`table`) or plain word form (table).
-    $tableReferencePattern = '/(?:`(?:' . $escapedTableAlternation . ')`|\b(?:' . $escapedTableAlternation . ')\b)/i';
-
-    $filteredStatements = [];
-    foreach ($statements as $statement) {
-        $trimmed = ltrim($statement);
-        if ($trimmed === '') {
-            continue;
-        }
-
-        if (
-            str_starts_with($trimmed, 'SET ')
-            || str_starts_with($trimmed, 'START TRANSACTION')
-            || str_starts_with($trimmed, 'COMMIT')
-            || str_starts_with($trimmed, '/*!')
-        ) {
-            // Keep SQL session/transaction context statements even when importing only specific table statements.
-            $filteredStatements[] = $statement;
-            continue;
-        }
-
-        if (preg_match($tableReferencePattern, $statement) === 1) {
-            $filteredStatements[] = $statement;
-        }
+    if ($errorCode === 1062 && str_starts_with($normalizedStatement, 'INSERT')) {
+        return true;
     }
 
-    return $filteredStatements;
+    if (
+        ($errorCode === 1060 || $errorCode === 1061 || $errorCode === 1068)
+        && str_starts_with($normalizedStatement, 'ALTER TABLE')
+    ) {
+        return true;
+    }
+
+    return false;
 }
 
 function veggieVillageExecuteStatements(mysqli $mysqli, array $statements): void
 {
     foreach ($statements as $statement) {
-        if (!$mysqli->query($statement)) {
-            throw new Exception('Database import failed: ' . $mysqli->error);
+        try {
+            $queryResult = $mysqli->query($statement);
+            if ($queryResult === false) {
+                $errorCode = (int) $mysqli->errno;
+                if (veggieVillageShouldIgnoreSqlError($errorCode, $statement)) {
+                    continue;
+                }
+
+                throw new Exception('Database import failed: ' . $mysqli->error);
+            }
+
+            if ($queryResult instanceof mysqli_result) {
+                $queryResult->free();
+            }
+        } catch (mysqli_sql_exception $e) {
+            if (veggieVillageShouldIgnoreSqlError((int) $e->getCode(), $statement)) {
+                continue;
+            }
+
+            throw new Exception('Database import failed: ' . $e->getMessage());
         }
     }
 }
@@ -193,38 +203,17 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
         throw new Exception('Failed to read database dump file: ' . $sqlPath);
     }
 
-    $statements = veggieVillageLoadSqlStatements($sqlDump);
+    $statements = veggieVillageNormalizeSqlStatements(veggieVillageLoadSqlStatements($sqlDump));
     if ($statements === []) {
         throw new Exception('Database dump file is empty: ' . $sqlPath);
     }
 
     $requiredTables = veggieVillageGetRequiredTables();
-    $existingTables = veggieVillageGetExistingTables($mysqli, $database);
+    veggieVillageExecuteStatements($mysqli, $statements);
 
-    $missingTables = [];
+    $existingTablesAfterImport = veggieVillageGetExistingTables($mysqli);
     foreach ($requiredTables as $requiredTable) {
-        if (!isset($existingTables[$requiredTable])) {
-            $missingTables[] = $requiredTable;
-        }
-    }
-
-    if ($missingTables !== []) {
-        $isFirstImport = count($existingTables) === 0;
-
-        if ($isFirstImport) {
-            veggieVillageExecuteStatements($mysqli, $statements);
-        } else {
-            $filteredStatements = veggieVillageFilterStatementsForTables($statements, $missingTables);
-            if ($filteredStatements === []) {
-                throw new Exception('Database import failed: dump does not contain definitions for required missing tables: ' . implode(', ', $missingTables));
-            }
-            veggieVillageExecuteStatements($mysqli, $filteredStatements);
-        }
-    }
-
-    $existingTablesAfterImport = veggieVillageGetExistingTables($mysqli, $database);
-    foreach ($requiredTables as $requiredTable) {
-        if (!isset($existingTablesAfterImport[$requiredTable])) {
+        if (!isset($existingTablesAfterImport[strtolower($requiredTable)])) {
             throw new Exception('Database import failed: required table "' . $requiredTable . '" is still missing.');
         }
     }

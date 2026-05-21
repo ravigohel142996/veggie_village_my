@@ -27,7 +27,7 @@ SET time_zone = "+00:00";
 -- Table structure for table `admin`
 --
 
-CREATE TABLE `admin` (
+CREATE TABLE IF NOT EXISTS `admin` (
   `id` int(11) NOT NULL,
   `name` varchar(250) NOT NULL,
   `email` varchar(50) NOT NULL,
@@ -47,7 +47,7 @@ INSERT INTO `admin` (`id`, `name`, `email`, `password`) VALUES
 -- Table structure for table `categories`
 --
 
-CREATE TABLE `categories` (
+CREATE TABLE IF NOT EXISTS `categories` (
   `id` int(11) NOT NULL,
   `name` varchar(250) NOT NULL,
   `short_desc` varchar(250) NOT NULL,
@@ -82,7 +82,7 @@ INSERT INTO `categories` (`id`, `name`, `short_desc`, `long_desc`, `image`, `dat
 -- Table structure for table `food`
 --
 
-CREATE TABLE `food` (
+CREATE TABLE IF NOT EXISTS `food` (
   `id` int(11) NOT NULL,
   `cat_id` int(10) NOT NULL,
   `fname` varchar(50) NOT NULL,
@@ -159,7 +159,7 @@ INSERT INTO `food` (`id`, `cat_id`, `fname`, `description`, `image`, `price`, `d
 -- Table structure for table `offers`
 --
 
-CREATE TABLE `offers` (
+CREATE TABLE IF NOT EXISTS `offers` (
   `id` int(11) NOT NULL,
   `title` varchar(100) DEFAULT NULL,
   `description` text DEFAULT NULL,
@@ -187,7 +187,7 @@ INSERT INTO `offers` (`id`, `title`, `description`, `discount`, `promo_code`, `s
 -- Table structure for table `orders`
 --
 
-CREATE TABLE `orders` (
+CREATE TABLE IF NOT EXISTS `orders` (
   `id` int(11) NOT NULL,
   `order_id` varchar(20) NOT NULL,
   `user_id` varchar(10) NOT NULL,
@@ -243,7 +243,7 @@ INSERT INTO `orders` (`id`, `order_id`, `user_id`, `food_id`, `user_name`, `time
 -- Table structure for table `page_views`
 --
 
-CREATE TABLE `page_views` (
+CREATE TABLE IF NOT EXISTS `page_views` (
   `id` int(11) NOT NULL,
   `view_count` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -261,7 +261,7 @@ INSERT INTO `page_views` (`id`, `view_count`) VALUES
 -- Table structure for table `users`
 --
 
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL,
   `name` varchar(50) DEFAULT NULL,
   `email` varchar(50) DEFAULT NULL,
