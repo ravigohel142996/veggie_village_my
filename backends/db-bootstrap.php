@@ -110,8 +110,8 @@ function veggieVillageFilterStatementsForTables(array $statements, array $tables
         }
 
         foreach ($tables as $table) {
-            $needle = '`' . $table . '`';
-            if (stripos($statement, $needle) !== false) {
+            $pattern = '/(?:`' . preg_quote($table, '/') . '`|\b' . preg_quote($table, '/') . '\b)/i';
+            if (preg_match($pattern, $statement) === 1) {
                 $filteredStatements[] = $statement;
                 break;
             }
@@ -221,7 +221,7 @@ function veggieVillageEnsureDatabaseInitialized(string $host, string $user, stri
         }
     }
 
-    $pageViewSeedSql = 'INSERT INTO page_views (id, view_count) VALUES (1, 0) ON DUPLICATE KEY UPDATE view_count = view_count';
+    $pageViewSeedSql = 'INSERT IGNORE INTO page_views (id, view_count) VALUES (1, 0)';
     if (!$mysqli->query($pageViewSeedSql)) {
         throw new Exception('Database setup failed: unable to seed page_views table. ' . $mysqli->error);
     }
