@@ -103,6 +103,11 @@ function veggieVillageAllRequiredTablesExist(array $existingTables, array $requi
 
 function veggieVillageTableHasRows(mysqli $mysqli, string $table): bool
 {
+    $allowedTables = array_map('strtolower', veggieVillageGetRequiredTables());
+    if (!in_array(strtolower($table), $allowedTables, true)) {
+        throw new Exception('Database table check failed: invalid table name.');
+    }
+
     $safeTable = '`' . str_replace('`', '``', $table) . '`';
     $result = $mysqli->query("SELECT 1 FROM {$safeTable} LIMIT 1");
 
