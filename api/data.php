@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../backends/bootstrap.php';
 
 try {
 
@@ -10,7 +11,7 @@ try {
 		
 } catch (Exception $e) {
 
-	$arr = array ('code'=>"0",'msg'=>"There were some problem in the Server! Try after some time!");
+	$arr = array('code' => "0", 'msg' => vv_build_error_response("There were some problem in the Server! Try after some time!", $e, true));
 
 	echo json_encode($arr);
 

@@ -1,9 +1,19 @@
 <?php 
 require __DIR__ . '/../backends/connection-pdo.php';
-$q = "SELECT * FROM page_views WHERE id = '1'";
-$que = $pdoconn->prepare($q);
-$que->execute();
-$views = $que->fetch();?>
+$viewsCount = 0;
+
+try {
+  $q = "SELECT view_count FROM page_views WHERE id = ?";
+  $que = $pdoconn->prepare($q);
+  $que->execute([1]);
+  $views = $que->fetch();
+  if (is_array($views) && isset($views['view_count'])) {
+    $viewsCount = (int) $views['view_count'];
+  }
+} catch (Throwable $e) {
+  vv_log_exception($e);
+}
+?>
 <section class="ffooter">
 		<footer class="page-footer">
           <div class="container">
@@ -25,7 +35,7 @@ $views = $que->fetch();?>
               </div>
               <div class="col l4 offset-l2 s12">
                 <h5 style="color: #E6DD3B;text-align:center;">Views 👀</h5>
-    <p style="font-size:18px;">🌟 Total <strong><?php echo $views['view_count']; ?></strong> users have visited this website! 🌟</p>
+    <p style="font-size:18px;">🌟 Total <strong><?php echo $viewsCount; ?></strong> users have visited this website! 🌟</p>
     <p>🎉 Thanks for being a part of our journey! 🚀</p>
               </div>
             </div>
