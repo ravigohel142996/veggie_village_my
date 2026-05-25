@@ -72,4 +72,3 @@ if (!function_exists('vv_build_error_response')) {
 }
 
 vv_debug_bootstrap();
-

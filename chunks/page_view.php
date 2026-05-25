@@ -8,7 +8,6 @@ if (!isset($_SESSION['visited'])) {
         $sql->execute();
     } catch (Throwable $e) {
         vv_log_exception($e);
-        unset($_SESSION['visited']);
     }
 }
 

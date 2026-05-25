@@ -3,9 +3,9 @@ require __DIR__ . '/../backends/connection-pdo.php';
 $viewsCount = 0;
 
 try {
-  $q = "SELECT view_count FROM page_views WHERE id = 1";
+  $q = "SELECT view_count FROM page_views WHERE id = ?";
   $que = $pdoconn->prepare($q);
-  $que->execute();
+  $que->execute([1]);
   $views = $que->fetch();
   if (is_array($views) && isset($views['view_count'])) {
     $viewsCount = (int) $views['view_count'];
