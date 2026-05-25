@@ -64,17 +64,10 @@ The app connects to an existing MySQL database using environment variables:
 
 For Railway + Render deployments, ensure these values point to the Railway MySQL instance.
 
-On startup, the app now bootstraps the database automatically:
-
-- Creates the configured database if it does not exist.
-- Imports the repository SQL dump on first startup when the database is empty.
-- Detects and creates any missing required tables (`admin`, `categories`, `food`, `offers`, `orders`, `page_views`, `users`) on later startups.
-- Seeds `page_views` row `id=1` if missing.
-- Skips duplicate imports when required tables are already present.
+The app uses a single direct `mysqli` production connection and does not auto-bootstrap/import the database on each request.
 
 ## Notes
 
-- `backends/config.php` reads DB env vars and validates connectivity with `mysqli` using host/user/pass/name/port.
-- `backends/connection-pdo.php` creates the shared PDO connection used throughout the app.
-- Production-safe exception handling is configured in `backends/bootstrap.php`.
+- `backends/config.php` creates the global `mysqli` connection from DB env vars.
+- `backends/connection-pdo.php` exposes the shared app connection wrapper backed by the same `mysqli` connection.
 - Admin uploads continue using the `images/` directory, now writable in container runtime.

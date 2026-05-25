@@ -6,7 +6,7 @@ $sql = 'SELECT * FROM offers ORDER BY id DESC';
 
 $query  = $pdoconn->prepare($sql);
 $query->execute();
-$arr_all = $query->fetchAll(PDO::FETCH_ASSOC);
+$arr_all = $query->fetchAll();
 ?>
 
 

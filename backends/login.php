@@ -47,7 +47,7 @@ if (!preg_match($regex_email, $_POST['email']) || !preg_match($regex_password, $
 
 	$query  = $pdoconn->prepare($sql);
 	$query->execute([$email]);
-	$arr_login=$query->fetchAll(PDO::FETCH_ASSOC);
+	$arr_login=$query->fetchAll();
 
 	if (count($arr_login) != 0) {
 		

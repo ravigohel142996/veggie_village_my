@@ -36,7 +36,7 @@ if ($code == "") {
 } else {
     $query2 = $pdoconn->prepare("SELECT * FROM offers WHERE promo_code = ?");
     $query2->execute([$code]);
-    $offercode = $query2->fetch(PDO::FETCH_ASSOC);
+    $offercode = $query2->fetch();
     $offertitle = $offercode['title'] ?? "Invalid";
 }
 

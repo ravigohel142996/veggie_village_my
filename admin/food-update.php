@@ -20,11 +20,11 @@ if (isset($_REQUEST['id'])) {
 
 $query  = $pdoconn->prepare($sql);
 $query->execute();
-$arr_all = $query->fetch(PDO::FETCH_ASSOC);
+$arr_all = $query->fetch();
 
 $query2  = $pdoconn->prepare("SELECT id,name FROM categories");
 $query2->execute();
-$arr_all2 = $query2->fetchAll(PDO::FETCH_ASSOC);
+$arr_all2 = $query2->fetchAll();
 
 
 ?>

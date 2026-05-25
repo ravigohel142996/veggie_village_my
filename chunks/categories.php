@@ -7,7 +7,7 @@ $sql = 'SELECT * FROM categories WHERE data_status = "Active"';
 
 $query  = $pdoconn->prepare($sql);
 $query->execute();
-$arr_all = $query->fetchAll(PDO::FETCH_ASSOC);
+$arr_all = $query->fetchAll();
 
 ?>
 <section class="fcategories">

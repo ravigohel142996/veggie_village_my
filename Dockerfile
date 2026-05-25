@@ -2,7 +2,7 @@ FROM php:8.2-apache
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libicu-dev libzip-dev zip unzip \
-    && docker-php-ext-install -j"$(nproc)" pdo pdo_mysql mysqli intl zip opcache \
+    && docker-php-ext-install -j"$(nproc)" mysqli intl zip opcache \
     && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*
 
