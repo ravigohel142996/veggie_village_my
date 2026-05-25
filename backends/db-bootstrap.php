@@ -197,7 +197,20 @@ function veggieVillageExecuteStatements(mysqli $mysqli, array $statements): void
 function veggieVillageIsTransientConnectionError(string $message): bool
 {
     $normalizedMessage = strtolower($message);
-    $transientMarkers = [
+    $transientMarkers = veggieVillageGetTransientConnectionErrorMarkers();
+
+    foreach ($transientMarkers as $marker) {
+        if (str_contains($normalizedMessage, $marker)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function veggieVillageGetTransientConnectionErrorMarkers(): array
+{
+    return [
         'server has gone away',
         'error while reading greeting packet',
         'lost connection',
@@ -209,14 +222,6 @@ function veggieVillageIsTransientConnectionError(string $message): bool
         'temporary failure',
         'try again',
     ];
-
-    foreach ($transientMarkers as $marker) {
-        if (str_contains($normalizedMessage, $marker)) {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 function veggieVillageCreateMysqliConnectionWithRetry(
@@ -245,7 +250,9 @@ function veggieVillageCreateMysqliConnectionWithRetry(
             return $conn;
         } catch (mysqli_sql_exception $e) {
             $lastErrorMessage = $e->getMessage();
-            $conn->close();
+            if ($conn instanceof mysqli) {
+                $conn->close();
+            }
 
             $shouldRetry = $attempt < $maxRetries
                 && veggieVillageIsTransientConnectionError($lastErrorMessage);
@@ -308,7 +315,10 @@ function veggieVillageWriteBootstrapState(string $host, string $database, int $p
         return;
     }
 
-    @file_put_contents($statePath, $state, LOCK_EX);
+    $writeResult = file_put_contents($statePath, $state, LOCK_EX);
+    if ($writeResult === false) {
+        error_log('Database bootstrap state write failed: ' . $statePath);
+    }
 }
 
 function veggieVillageEnsureDatabaseInitialized(string $host, string $user, string $password, string $database, int $port = 3306): void

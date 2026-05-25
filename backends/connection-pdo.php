@@ -3,29 +3,13 @@
 require_once __DIR__ . '/bootstrap.php';
 include_once __DIR__ . "/config.php";
 
-if (!function_exists('veggieVillageGetTransientConnectionErrorMarkers')) {
-    function veggieVillageGetTransientConnectionErrorMarkers(): array
-    {
-        return [
-            'server has gone away',
-            'error while reading greeting packet',
-            'lost connection',
-            'connection refused',
-            'connection timed out',
-            'timed out',
-            'resource temporarily unavailable',
-            'no route to host',
-            'temporary failure',
-            'try again',
-        ];
-    }
-}
-
 if (!function_exists('veggieVillageIsTransientPdoConnectionError')) {
     function veggieVillageIsTransientPdoConnectionError(string $message): bool
     {
         $normalizedMessage = strtolower($message);
-        $transientMarkers = veggieVillageGetTransientConnectionErrorMarkers();
+        $transientMarkers = function_exists('veggieVillageGetTransientConnectionErrorMarkers')
+            ? veggieVillageGetTransientConnectionErrorMarkers()
+            : ['server has gone away', 'error while reading greeting packet', 'lost connection', 'connection refused', 'connection timed out', 'timed out', 'resource temporarily unavailable', 'no route to host', 'temporary failure', 'try again'];
 
         foreach ($transientMarkers as $marker) {
             if (str_contains($normalizedMessage, $marker)) {
@@ -75,17 +59,26 @@ if (!function_exists('veggieVillageGetSharedPdoConnection')) {
     function veggieVillageGetSharedPdoConnection(string $dsn, string $user, string $pass): PDO
     {
         static $sharedPdo = null;
+        static $lastHealthCheckAt = 0;
 
         if ($sharedPdo instanceof PDO) {
-            try {
-                $sharedPdo->query('SELECT 1');
+            $currentTime = time();
+            $shouldHealthCheck = ($currentTime - $lastHealthCheckAt) >= 30;
+            if ($shouldHealthCheck) {
+                try {
+                    $sharedPdo->query('SELECT 1');
+                    $lastHealthCheckAt = $currentTime;
+                    return $sharedPdo;
+                } catch (Throwable $connectionLost) {
+                    $sharedPdo = null;
+                }
+            } else {
                 return $sharedPdo;
-            } catch (Throwable $connectionLost) {
-                $sharedPdo = null;
             }
         }
 
         $sharedPdo = veggieVillageCreatePdoConnectionWithRetry($dsn, $user, $pass);
+        $lastHealthCheckAt = time();
         return $sharedPdo;
     }
 }
