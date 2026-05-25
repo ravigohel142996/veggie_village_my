@@ -16,6 +16,9 @@ $sql = 'SELECT * FROM food WHERE id = :id';
 $query = $pdoconn->prepare($sql);
 $foodId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if ($foodId === false || $foodId === null) {
+    $foodId = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
+}
+if ($foodId === false || $foodId === null) {
     die("Food item not found.");
 }
 $query->bindParam(':id', $foodId);
