@@ -14,7 +14,11 @@ $offers = $que->fetchAll();
 
 $sql = 'SELECT * FROM food WHERE id = :id';
 $query = $pdoconn->prepare($sql);
-$query->bindParam(':id', $_REQUEST['id']);
+$foodId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+if ($foodId === false || $foodId === null) {
+    die("Food item not found.");
+}
+$query->bindParam(':id', $foodId);
 $query->execute();
 $arr_all = $query->fetch();
 
