@@ -7,22 +7,6 @@ if (!defined('VEGGIE_VILLAGE_PDO_HEALTH_CHECK_INTERVAL_SECONDS')) {
     define('VEGGIE_VILLAGE_PDO_HEALTH_CHECK_INTERVAL_SECONDS', 30);
 }
 
-if (!function_exists('veggieVillageIsTransientPdoConnectionError')) {
-    function veggieVillageIsTransientPdoConnectionError(string $message): bool
-    {
-        $normalizedMessage = strtolower($message);
-        $transientMarkers = veggieVillageGetTransientConnectionErrorMarkers();
-
-        foreach ($transientMarkers as $marker) {
-            if (str_contains($normalizedMessage, $marker)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-}
-
 if (!function_exists('veggieVillageCreatePdoConnectionWithRetry')) {
     function veggieVillageCreatePdoConnectionWithRetry(string $dsn, string $user, string $pass, int $maxRetries = 3): PDO
     {
@@ -40,16 +24,13 @@ if (!function_exists('veggieVillageCreatePdoConnectionWithRetry')) {
             } catch (PDOException $e) {
                 $lastErrorMessage = $e->getMessage();
                 $shouldRetry = $attempt < $maxRetries
-                    && veggieVillageIsTransientPdoConnectionError($lastErrorMessage);
+                    && veggieVillageIsTransientConnectionError($lastErrorMessage);
 
                 if (!$shouldRetry) {
                     break;
                 }
 
-                $retryDelay = defined('VEGGIE_VILLAGE_DB_CONNECT_RETRY_DELAY_MICROSECONDS')
-                    ? VEGGIE_VILLAGE_DB_CONNECT_RETRY_DELAY_MICROSECONDS
-                    : 250000;
-                usleep($retryDelay * $attempt);
+                usleep(VEGGIE_VILLAGE_DB_CONNECT_RETRY_DELAY_MICROSECONDS * $attempt);
             }
         }
 
