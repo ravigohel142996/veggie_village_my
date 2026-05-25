@@ -32,7 +32,7 @@ if (!isset($_REQUEST['key'])) {
 		$sql = "SELECT * FROM users;";
         $query  = $pdoconn->prepare($sql);
         $query->execute();
-        $arr = $query->fetchAll(PDO::FETCH_ASSOC);
+        $arr = $query->fetchAll();
 
 		echo json_encode($arr);
 	} else {

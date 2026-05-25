@@ -12,7 +12,7 @@ $sql = 'SELECT * FROM categories';
 
 $query  = $pdoconn->prepare($sql);
 $query->execute();
-$arr_all = $query->fetchAll(PDO::FETCH_ASSOC);
+$arr_all = $query->fetchAll();
 
 
 

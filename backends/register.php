@@ -111,7 +111,7 @@ if (!preg_match($regex_name, $_POST['name']) || !preg_match($regex_email, $_POST
 
 	$query  = $pdoconn->prepare($sql);
 	$query->execute([$email]);
-	$arr_login=$query->fetchAll(PDO::FETCH_ASSOC);
+	$arr_login=$query->fetchAll();
 	$row = $query->rowCount();
 
 	if ($row != 0) {

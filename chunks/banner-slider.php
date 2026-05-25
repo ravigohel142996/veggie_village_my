@@ -19,7 +19,7 @@ $sql = "SELECT * FROM offers WHERE CURDATE() BETWEEN start_date AND end_date AND
 $query = $pdoconn->prepare($sql);
 $query->execute();
 $row = $query->rowCount();
-$offers = $query->fetchAll(PDO::FETCH_ASSOC);
+$offers = $query->fetchAll();
 ?>
 
 

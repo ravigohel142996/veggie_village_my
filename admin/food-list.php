@@ -17,7 +17,7 @@ $sql = "SELECT food.price,food.data_status, food.id, food.fname, food.descriptio
         LEFT JOIN categories ON food.cat_id = categories.id;";
 $query  = $pdoconn->prepare($sql);
 $query->execute();
-$arr_all = $query->fetchAll(PDO::FETCH_ASSOC);
+$arr_all = $query->fetchAll();
 
 
 

@@ -9,14 +9,14 @@ $q = "SELECT * FROM offers WHERE CURDATE() BETWEEN start_date AND end_date AND d
 $que = $pdoconn->prepare($q);
 $que->execute();
 $row = $que->rowCount();
-$offers = $que->fetchAll(PDO::FETCH_ASSOC);
+$offers = $que->fetchAll();
 
 
 $sql = 'SELECT * FROM food WHERE id = :id';
 $query = $pdoconn->prepare($sql);
-$query->bindParam(':id', $_REQUEST['id'], PDO::PARAM_INT);
+$query->bindParam(':id', $_REQUEST['id']);
 $query->execute();
-$arr_all = $query->fetch(PDO::FETCH_ASSOC);
+$arr_all = $query->fetch();
 
 if (!$arr_all) {
     die("Food item not found.");

@@ -12,7 +12,7 @@ $sql = 'SELECT orders.offer,orders.quantity, orders.price, orders.order_id, orde
 
 $query  = $pdoconn->prepare($sql);
 $query->execute();
-$arr_all = $query->fetchAll(PDO::FETCH_ASSOC);
+$arr_all = $query->fetchAll();
 
 
 

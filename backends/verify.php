@@ -21,7 +21,7 @@ if(isset($_GET['email']) && isset($_GET['v_code'])){
 	if ($query->execute()){
         $row  = $query->rowCount();
         if($row == 1){
-            $result_fetch = $query->fetch(PDO::FETCH_ASSOC);
+            $result_fetch = $query->fetch();
             if($result_fetch['is_verified'] == 0){
                 $update  = $pdoconn->prepare("UPDATE users SET is_verified = '1' WHERE email = '$result_fetch[email]'");
                 if($update->execute()){

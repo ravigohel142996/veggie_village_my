@@ -19,7 +19,7 @@ $sql = "SELECT * FROM admin WHERE email='$email' AND password='$password'";
 
 $query  = $pdoconn->prepare($sql);
 $query->execute();
-$arr_login=$query->fetchAll(PDO::FETCH_ASSOC);
+$arr_login=$query->fetchAll();
 
 
 if (count($arr_login) > 0) {

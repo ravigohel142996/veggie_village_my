@@ -8,7 +8,7 @@ $sql = 'SELECT * FROM categories WHERE data_status = "Active" LIMIT 3';
 
 $query  = $pdoconn->prepare($sql);
 $query->execute();
-$arr_all = $query->fetchAll(PDO::FETCH_ASSOC);
+$arr_all = $query->fetchAll();
 
 ?>
 

@@ -3,7 +3,7 @@ require __DIR__ . '/../backends/connection-pdo.php';
 $q = "SELECT * FROM page_views WHERE id = '1'";
 $que = $pdoconn->prepare($q);
 $que->execute();
-$views = $que->fetch(PDO::FETCH_ASSOC);?>
+$views = $que->fetch();?>
 <section class="ffooter">
 		<footer class="page-footer">
           <div class="container">

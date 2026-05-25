@@ -19,7 +19,7 @@ if (isset($_REQUEST['id'])) {
 
 $query  = $pdoconn->prepare($sql);
 $query->execute();
-$arr_all = $query->fetch(PDO::FETCH_ASSOC);
+$arr_all = $query->fetch();
 
 
 
