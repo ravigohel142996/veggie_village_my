@@ -3,11 +3,10 @@
 require_once __DIR__ . '/bootstrap.php';
 include_once __DIR__ . "/config.php";
 
-if (!function_exists('veggieVillageIsTransientPdoConnectionError')) {
-    function veggieVillageIsTransientPdoConnectionError(string $message): bool
+if (!function_exists('veggieVillageGetTransientConnectionErrorMarkers')) {
+    function veggieVillageGetTransientConnectionErrorMarkers(): array
     {
-        $normalizedMessage = strtolower($message);
-        $transientMarkers = [
+        return [
             'server has gone away',
             'error while reading greeting packet',
             'lost connection',
@@ -19,6 +18,14 @@ if (!function_exists('veggieVillageIsTransientPdoConnectionError')) {
             'temporary failure',
             'try again',
         ];
+    }
+}
+
+if (!function_exists('veggieVillageIsTransientPdoConnectionError')) {
+    function veggieVillageIsTransientPdoConnectionError(string $message): bool
+    {
+        $normalizedMessage = strtolower($message);
+        $transientMarkers = veggieVillageGetTransientConnectionErrorMarkers();
 
         foreach ($transientMarkers as $marker) {
             if (str_contains($normalizedMessage, $marker)) {
@@ -53,7 +60,10 @@ if (!function_exists('veggieVillageCreatePdoConnectionWithRetry')) {
                     break;
                 }
 
-                usleep(250000 * $attempt);
+                $retryDelay = defined('VEGGIE_VILLAGE_DB_CONNECT_RETRY_DELAY_MICROSECONDS')
+                    ? VEGGIE_VILLAGE_DB_CONNECT_RETRY_DELAY_MICROSECONDS
+                    : 250000;
+                usleep($retryDelay * $attempt);
             }
         }
 
@@ -70,7 +80,7 @@ if (!function_exists('veggieVillageGetSharedPdoConnection')) {
             try {
                 $sharedPdo->query('SELECT 1');
                 return $sharedPdo;
-            } catch (Throwable $ignored) {
+            } catch (Throwable $connectionLost) {
                 $sharedPdo = null;
             }
         }
