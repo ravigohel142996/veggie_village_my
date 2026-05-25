@@ -270,12 +270,12 @@ function veggieVillageCreateMysqliConnectionWithRetry(
 
 function veggieVillageGetBootstrapStatePath(string $host, string $database, int $port): string
 {
-    $stateKeyMaterial = json_encode([
+    $stateKeyMaterial = serialize([
         strtolower(trim($host)),
         strtolower(trim($database)),
         (int) $port,
     ]);
-    $stateKey = hash('sha256', $stateKeyMaterial === false ? '' : $stateKeyMaterial);
+    $stateKey = hash('sha256', $stateKeyMaterial);
     return rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'veggie_village_db_bootstrap_' . $stateKey . '.json';
 }
 

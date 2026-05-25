@@ -12,11 +12,12 @@ if (!function_exists('veggieVillageCreatePdoConnectionWithRetry')) {
     {
         $maxRetries = max(1, $maxRetries);
         $lastErrorMessage = 'Unknown PDO connection error.';
+        $isPersistent = filter_var(getenv('DB_PDO_PERSISTENT') ?: 'false', FILTER_VALIDATE_BOOLEAN);
 
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
             try {
                 return new PDO($dsn, $user, $pass, [
-                    PDO::ATTR_PERSISTENT => false,
+                    PDO::ATTR_PERSISTENT => $isPersistent,
                     PDO::ATTR_TIMEOUT => 10,
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
