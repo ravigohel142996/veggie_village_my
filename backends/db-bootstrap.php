@@ -317,6 +317,7 @@ function veggieVillageWriteBootstrapState(string $host, string $database, int $p
     ]);
 
     if ($state === false) {
+        error_log('Database bootstrap state encoding failed.');
         return;
     }
 
