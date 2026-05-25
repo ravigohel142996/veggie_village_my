@@ -3,13 +3,15 @@
 require_once __DIR__ . '/bootstrap.php';
 include_once __DIR__ . "/config.php";
 
+if (!defined('VEGGIE_VILLAGE_PDO_HEALTH_CHECK_INTERVAL_SECONDS')) {
+    define('VEGGIE_VILLAGE_PDO_HEALTH_CHECK_INTERVAL_SECONDS', 30);
+}
+
 if (!function_exists('veggieVillageIsTransientPdoConnectionError')) {
     function veggieVillageIsTransientPdoConnectionError(string $message): bool
     {
         $normalizedMessage = strtolower($message);
-        $transientMarkers = function_exists('veggieVillageGetTransientConnectionErrorMarkers')
-            ? veggieVillageGetTransientConnectionErrorMarkers()
-            : ['server has gone away', 'error while reading greeting packet', 'lost connection', 'connection refused', 'connection timed out', 'timed out', 'resource temporarily unavailable', 'no route to host', 'temporary failure', 'try again'];
+        $transientMarkers = veggieVillageGetTransientConnectionErrorMarkers();
 
         foreach ($transientMarkers as $marker) {
             if (str_contains($normalizedMessage, $marker)) {
@@ -63,10 +65,10 @@ if (!function_exists('veggieVillageGetSharedPdoConnection')) {
 
         if ($sharedPdo instanceof PDO) {
             $currentTime = time();
-            $shouldHealthCheck = ($currentTime - $lastHealthCheckAt) >= 30;
+            $shouldHealthCheck = ($currentTime - $lastHealthCheckAt) >= VEGGIE_VILLAGE_PDO_HEALTH_CHECK_INTERVAL_SECONDS;
             if ($shouldHealthCheck) {
                 try {
-                    $sharedPdo->query('SELECT 1');
+                    $sharedPdo->getAttribute(PDO::ATTR_SERVER_INFO);
                     $lastHealthCheckAt = $currentTime;
                     return $sharedPdo;
                 } catch (Throwable $connectionLost) {

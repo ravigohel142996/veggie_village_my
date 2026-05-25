@@ -317,7 +317,7 @@ function veggieVillageWriteBootstrapState(string $host, string $database, int $p
 
     $writeResult = file_put_contents($statePath, $state, LOCK_EX);
     if ($writeResult === false) {
-        error_log('Database bootstrap state write failed: ' . $statePath);
+        error_log('Database bootstrap state write failed.');
     }
 }
 
