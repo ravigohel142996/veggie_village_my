@@ -19,7 +19,7 @@ if ($foodId === false || $foodId === null) {
     $foodId = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
 }
 if ($foodId === false || $foodId === null) {
-    die("Food item not found.");
+    die("Invalid or missing food ID parameter.");
 }
 $query->bindParam(':id', $foodId);
 $query->execute();
