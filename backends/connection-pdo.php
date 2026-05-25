@@ -3,16 +3,74 @@
 require_once __DIR__ . '/bootstrap.php';
 include_once __DIR__ . "/config.php";
 
+if (!defined('VEGGIE_VILLAGE_PDO_HEALTH_CHECK_INTERVAL_SECONDS')) {
+    define('VEGGIE_VILLAGE_PDO_HEALTH_CHECK_INTERVAL_SECONDS', 30);
+}
+
+if (!function_exists('veggieVillageCreatePdoConnectionWithRetry')) {
+    function veggieVillageCreatePdoConnectionWithRetry(string $dsn, string $user, string $pass, int $maxRetries = 3): PDO
+    {
+        $maxRetries = max(1, $maxRetries);
+        $lastErrorMessage = 'Unknown PDO connection error.';
+        $isPersistent = filter_var(getenv('DB_PDO_PERSISTENT') ?: 'false', FILTER_VALIDATE_BOOLEAN);
+
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            try {
+                return new PDO($dsn, $user, $pass, [
+                    PDO::ATTR_PERSISTENT => $isPersistent,
+                    PDO::ATTR_TIMEOUT => 10,
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                ]);
+            } catch (PDOException $e) {
+                $lastErrorMessage = $e->getMessage();
+                $shouldRetry = $attempt < $maxRetries
+                    && veggieVillageIsTransientConnectionError($lastErrorMessage);
+
+                if (!$shouldRetry) {
+                    break;
+                }
+
+                usleep(VEGGIE_VILLAGE_DB_CONNECT_RETRY_DELAY_MICROSECONDS * $attempt);
+            }
+        }
+
+        throw new Exception('Database connection failed after retries: ' . $lastErrorMessage);
+    }
+}
+
+if (!function_exists('veggieVillageGetSharedPdoConnection')) {
+    function veggieVillageGetSharedPdoConnection(string $dsn, string $user, string $pass): PDO
+    {
+        static $sharedPdo = null;
+        static $lastHealthCheckAt = 0;
+
+        if ($sharedPdo instanceof PDO) {
+            $currentTime = time();
+            $shouldHealthCheck = ($currentTime - $lastHealthCheckAt) >= VEGGIE_VILLAGE_PDO_HEALTH_CHECK_INTERVAL_SECONDS;
+            if ($shouldHealthCheck) {
+                try {
+                    $sharedPdo->getAttribute(PDO::ATTR_SERVER_INFO);
+                    $lastHealthCheckAt = $currentTime;
+                    return $sharedPdo;
+                } catch (Throwable $connectionLost) {
+                    $sharedPdo = null;
+                }
+            } else {
+                return $sharedPdo;
+            }
+        }
+
+        $sharedPdo = veggieVillageCreatePdoConnectionWithRetry($dsn, $user, $pass);
+        $lastHealthCheckAt = time();
+        return $sharedPdo;
+    }
+}
+
 try {
     $dsn = "mysql:host={$host};port={$port};dbname={$db};charset=utf8mb4";
-    $pdoconn = new PDO($dsn, $user, $pass, [
-        PDO::ATTR_PERSISTENT => true,
-        PDO::ATTR_TIMEOUT => 5,
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
-} catch (PDOException $e) {
-    error_log('PDO connection failed for DB_HOST=' . $host . ' DB_PORT=' . $port . ' error=' . $e->getMessage());
+    $pdoconn = veggieVillageGetSharedPdoConnection($dsn, $user, $pass);
+} catch (Throwable $e) {
     throw new Exception('Database connection failed: ' . $e->getMessage());
 }
 

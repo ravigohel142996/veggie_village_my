@@ -1,6 +1,5 @@
 <?php
 
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 require_once __DIR__ . '/db-bootstrap.php';
 
 $host = trim(getenv('DB_HOST'));
@@ -22,21 +21,7 @@ if ($host === '' || strtolower($host) === 'localhost' || str_starts_with($host, 
 try {
     veggieVillageEnsureDatabaseInitialized($host, $user, $pass, $db, $port);
 } catch (Throwable $e) {
-    error_log('WARNING: Database bootstrap failed; application may not function correctly until DB is initialized: ' . $e->getMessage());
+    error_log('Database bootstrap skipped or failed: ' . $e->getMessage());
 }
-
-error_log('DB_HOST=' . $host);
-error_log('DB_PORT=' . $port);
-
-$conn = new mysqli($host, $user, $pass, $db, $port);
-
-$conn->set_charset('utf8mb4');
-
-if ($conn->connect_error) {
-    error_log('MySQLi connection error: ' . $conn->connect_error);
-    die('Database connection failed: ' . $conn->connect_error);
-}
-
-$conn->close();
 
 ?>
