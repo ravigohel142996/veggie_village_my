@@ -1,4 +1,6 @@
 <?php 
+require_once __DIR__ . '/bootstrap.php';
+
 try {
 
     $connectionFile = __DIR__ . '/connection-pdo.php';
@@ -7,9 +9,9 @@ try {
     else
         require_once($connectionFile); 
 		
-} catch (Exception $e) {
+} catch (Throwable $e) {
 
-	$arr = array ('code'=>"0",'msg'=>"There were some problem in the Server! Try after some time!");
+	$arr = array('code' => "0", 'msg' => vv_build_error_response("There were some problem in the Server! Try after some time!", $e, true));
 
 	echo json_encode($arr);
 

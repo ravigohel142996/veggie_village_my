@@ -1,12 +1,16 @@
 <?php
 session_start();
+require_once __DIR__ . '/bootstrap.php';
 
 try {
     $connectionFile = __DIR__ . '/connection-pdo.php';
     if (!file_exists($connectionFile)) throw new Exception();
     else require_once($connectionFile);
-} catch (Exception $e) {
-    echo json_encode(['code'=>"0", 'msg'=>"There were some problem in the Server! Try after some time!"]);
+} catch (Throwable $e) {
+    echo json_encode([
+        'code' => "0",
+        'msg' => vv_build_error_response("There were some problem in the Server! Try after some time!", $e, true)
+    ]);
     exit();
 }
 

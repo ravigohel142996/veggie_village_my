@@ -46,7 +46,9 @@ if (!class_exists('VeggieVillageMysqliStatement')) {
 
             $statement = $this->connection->prepare($this->normalizedQuery);
             if ($statement === false) {
-                throw new Exception('Database query prepare failed.');
+                throw new Exception(
+                    'Database query prepare failed: ' . $this->connection->error . ' | SQL: ' . $this->normalizedQuery
+                );
             }
 
             $this->statement = $statement;
